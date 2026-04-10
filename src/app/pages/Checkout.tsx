@@ -9,7 +9,7 @@ import { Label } from "../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Separator } from "../components/ui/separator";
 import { Switch } from "../components/ui/switch";
-import { CreditCard, Smartphone, Gift, Nfc } from "lucide-react";
+import { CreditCard, Smartphone, Gift, Nfc, Ticket } from "lucide-react";
 import { toast } from "sonner";
 
 export function Checkout() {
@@ -17,8 +17,9 @@ export function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [processing, setProcessing] = useState(false);
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
-  const [usePoints, setUsePoints] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [useCoupon, setUseCoupon] = useState(false);
+  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
   
   const user = storage.getUser();
 
@@ -42,8 +43,19 @@ export function Checkout() {
   }
 
   const subtotal = checkoutItems.reduce((sum, item) => sum + item.totalPrice, 0);
-  const pointsDiscount = usePoints && user ? Math.min(user.points, subtotal) : 0;
-  const total = subtotal - pointsDiscount;
+  const getActiveCoupons = () => {
+    if (!user) return [];
+    const now = new Date();
+    const active = user.coupons.filter(c => 
+      !c.isUsed && 
+      new Date(c.startDate) <= now && 
+      new Date(c.expiryDate) > now
+    );
+    // Sort by start date (earliest first) and return top 5
+    return active.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()).slice(0, 5);
+  };
+  const couponDiscount = useCoupon && selectedCouponId ? (subtotal * 0.2) : 0;
+  const total = subtotal - couponDiscount;
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,9 +87,18 @@ export function Checkout() {
 
     storage.addOrder(order);
     
-    // Update user points - deduct used points and add earned points
+    // Mark coupon as used if applicable
+    if (useCoupon && selectedCouponId && user) {
+      const updatedCoupons = user.coupons.map(c => 
+        c.id === selectedCouponId ? { ...c, isUsed: true } : c
+      );
+      const updatedUser = { ...user, coupons: updatedCoupons };
+      storage.setUser(updatedUser);
+    }
+    
+    // Update user points - add earned points (based on final amount after discount)
     if (user) {
-      const newPoints = (user.points - pointsDiscount) + Math.floor(total);
+      const newPoints = user.points + Math.floor(total);
       storage.updateUserPoints(newPoints);
     }
     
@@ -104,6 +125,58 @@ export function Checkout() {
         <form onSubmit={handlePlaceOrder}>
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
+              {/* Coupon Selection */}
+              {getActiveCoupons().length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Ticket className="w-5 h-5 text-orange-600" />
+                      Apply Coupon
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">You can use one coupon per order</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50"
+                        onClick={() => {
+                          setUseCoupon(!useCoupon);
+                          if (useCoupon) setSelectedCouponId(null);
+                        }}>
+                        <input 
+                          type="checkbox" 
+                          id="use-coupon"
+                          checked={useCoupon}
+                          onChange={() => {}}
+                          className="cursor-pointer"
+                        />
+                        <label htmlFor="use-coupon" className="flex-1 cursor-pointer text-sm font-medium">
+                          Use a coupon
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {useCoupon && (
+                      <div className="space-y-2 pl-6">
+                        <p className="text-xs text-gray-500">Select one coupon:</p>
+                        <RadioGroup value={selectedCouponId || ""} onValueChange={setSelectedCouponId}>
+                          {getActiveCoupons().map((coupon) => (
+                            <div key={coupon.id} className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-orange-50 cursor-pointer hover:border-orange-400">
+                              <RadioGroupItem value={coupon.id} id={coupon.id} />
+                              <Label htmlFor={coupon.id} className="flex-1 cursor-pointer">
+                                <div>
+                                  <p className="font-semibold text-orange-900">{coupon.name}</p>
+                                  <p className="text-xs text-orange-600">Get 20% off</p>
+                                </div>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Payment Method */}
               <Card>
                 <CardHeader>
@@ -238,36 +311,20 @@ export function Checkout() {
 
                   <Separator />
 
-                  {user && user.points > 0 && (
-                    <>
-                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Gift className="w-4 h-4 text-amber-600" />
-                          <div>
-                            <div className="text-sm font-semibold">Use Points</div>
-                            <div className="text-xs text-gray-600">You have {user.points} points</div>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={usePoints}
-                          onCheckedChange={setUsePoints}
-                        />
-                      </div>
-                      <Separator />
-                    </>
-                  )}
+  
 
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal</span>
                       <span>HK${subtotal.toFixed(2)}</span>
                     </div>
-                    {pointsDiscount > 0 && (
+                    {couponDiscount > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
-                        <span>Points Discount</span>
-                        <span>-HK${pointsDiscount.toFixed(2)}</span>
+                        <span>Coupon Discount (20%)</span>
+                        <span>-HK${couponDiscount.toFixed(2)}</span>
                       </div>
                     )}
+
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>

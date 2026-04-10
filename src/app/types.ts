@@ -10,6 +10,7 @@ export interface Coupon {
   id: string;
   name: string;
   discount: number; // 0.8 for 20% off
+  startDate: string;
   expiryDate: string;
   isUsed: boolean;
 }
@@ -34,6 +35,7 @@ export interface Drink {
   basePrice: number;
   category: string;
   image: string;
+  isRecommended?: boolean;
 }
 
 export interface CartItem {

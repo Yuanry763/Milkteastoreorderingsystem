@@ -16,6 +16,7 @@ export const drinks: Drink[] = [
     basePrice: 32,
     category: "Milk Tea",
     image: "https://images.unsplash.com/photo-1717239318422-a3cc081cc30f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0YXJvJTIwbWlsayUyMHRlYSUyMHB1cnBsZSUyMGRyaW5rfGVufDF8fHx8MTc3NTQ0MjcxNnww&ixlib=rb-4.1.0&q=80&w=1080",
+    isRecommended: true,
   },
   {
     id: "3",
@@ -32,6 +33,7 @@ export const drinks: Drink[] = [
     basePrice: 35,
     category: "Specialty",
     image: "https://images.unsplash.com/photo-1741244133076-afcdda4befae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxicm93biUyMHN1Z2FyJTIwYm9iYSUyMHBlYXJsc3xlbnwxfHx8fDE3NzU0NDI3MTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    isRecommended: true,
   },
   {
     id: "5",
@@ -40,6 +42,7 @@ export const drinks: Drink[] = [
     basePrice: 30,
     category: "Milk Tea",
     image: "https://images.unsplash.com/photo-1773738650471-102f4a4e986a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0aGFpJTIwaWNlZCUyMHRlYSUyMG9yYW5nZXxlbnwxfHx8fDE3NzU0MjQ3NjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    isRecommended: true,
   },
   {
     id: "6",

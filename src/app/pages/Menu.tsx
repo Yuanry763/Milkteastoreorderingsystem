@@ -17,6 +17,11 @@ export function Menu() {
 
   const categories = ["All", ...Array.from(new Set(drinks.map((d) => d.category)))];
   const filteredDrinks = filter === "All" ? drinks : drinks.filter((d) => d.category === filter);
+  // Sort: recommended first, then the rest
+  const sortedDrinks = [...filteredDrinks].sort((a, b) => {
+    if (a.isRecommended === b.isRecommended) return 0;
+    return a.isRecommended ? -1 : 1;
+  });
 
   const updateCartCount = () => {
     const cart = storage.getCart();
@@ -57,8 +62,13 @@ export function Menu() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredDrinks.map((drink) => (
-          <Card key={drink.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+        {sortedDrinks.map((drink) => (
+          <Card key={drink.id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
+            {drink.isRecommended && (
+              <div className="absolute top-2 right-2 z-10">
+                <Badge className="bg-red-500 text-white">Recommend</Badge>
+              </div>
+            )}
             <div className="aspect-square overflow-hidden bg-gray-100">
               <img
                 src={drink.image}

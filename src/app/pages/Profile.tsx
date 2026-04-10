@@ -109,9 +109,24 @@ export function Profile() {
     return date.toLocaleDateString("en-HK", { year: "numeric", month: "short", day: "numeric" });
   };
 
+  const getDaysRemaining = (expiryDate: string) => {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
   const getActiveCoupons = () => {
     if (!user) return [];
-    return user.coupons.filter(c => !c.isUsed && new Date(c.expiryDate) > new Date());
+    const now = new Date();
+    const active = user.coupons.filter(c => 
+      !c.isUsed && 
+      new Date(c.startDate) <= now && 
+      new Date(c.expiryDate) > now
+    );
+    // Sort by start date (earliest first) and return top 5
+    return active.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()).slice(0, 5);
   };
 
   const getUsedCoupons = () => {
@@ -266,23 +281,18 @@ export function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-orange-600" />
-                My Coupons
+                Available Coupons
               </CardTitle>
-              <CardDescription>Festival coupons valid for 10 days - 20% off!</CardDescription>
+              <CardDescription>Festival coupons - 20% off!</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="active">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="active">Active ({getActiveCoupons().length})</TabsTrigger>
-                  <TabsTrigger value="used">Used ({getUsedCoupons().length})</TabsTrigger>
-                  <TabsTrigger value="expired">Expired ({getExpiredCoupons().length})</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="active" className="space-y-3 mt-4">
-                  {getActiveCoupons().length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No active coupons</p>
-                  ) : (
-                    getActiveCoupons().map((coupon) => (
+              {getActiveCoupons().length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No active coupons available</p>
+              ) : (
+                <div className="space-y-3">
+                  {getActiveCoupons().map((coupon) => {
+                    const daysRemaining = getDaysRemaining(coupon.expiryDate);
+                    return (
                       <div key={coupon.id} className="p-4 border-2 border-orange-200 bg-orange-50 rounded-lg">
                         <div className="flex items-start justify-between mb-2">
                           <div>
@@ -293,53 +303,13 @@ export function Profile() {
                         </div>
                         <div className="flex items-center gap-1 text-xs text-orange-600">
                           <Calendar className="w-3 h-3" />
-                          <span>Valid until {formatDate(coupon.expiryDate)}</span>
+                          <span>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining</span>
                         </div>
                       </div>
-                    ))
-                  )}
-                </TabsContent>
-
-                <TabsContent value="used" className="space-y-3 mt-4">
-                  {getUsedCoupons().length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No used coupons</p>
-                  ) : (
-                    getUsedCoupons().map((coupon) => (
-                      <div key={coupon.id} className="p-4 border bg-gray-50 rounded-lg opacity-60">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h4 className="font-semibold text-gray-700">{coupon.name}</h4>
-                            <p className="text-sm text-gray-600">20% OFF</p>
-                          </div>
-                          <Badge variant="outline">Used</Badge>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
-
-                <TabsContent value="expired" className="space-y-3 mt-4">
-                  {getExpiredCoupons().length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No expired coupons</p>
-                  ) : (
-                    getExpiredCoupons().map((coupon) => (
-                      <div key={coupon.id} className="p-4 border bg-gray-50 rounded-lg opacity-60">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h4 className="font-semibold text-gray-700">{coupon.name}</h4>
-                            <p className="text-sm text-gray-600">20% OFF</p>
-                          </div>
-                          <Badge variant="outline">Expired</Badge>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Calendar className="w-3 h-3" />
-                          <span>Expired on {formatDate(coupon.expiryDate)}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
-              </Tabs>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 

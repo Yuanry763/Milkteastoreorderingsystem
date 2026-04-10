@@ -211,6 +211,16 @@ export function Cart() {
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => handleModifyItem(item)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Modify
+                          </Button>
+                          <Separator orientation="vertical" className="h-6" />
+                          <Button
+                            variant="outline"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
