@@ -11,6 +11,12 @@ export function Layout() {
   const [user, setUser] = useState(storage.getUser());
   const [cartCount, setCartCount] = useState(0);
 
+  // Monitor user state and route changes
+  useEffect(() => {
+    const currentUser = storage.getUser();
+    setUser(currentUser);
+  }, [location.pathname]);
+
   useEffect(() => {
     const updateCart = () => {
       const cart = storage.getCart();
