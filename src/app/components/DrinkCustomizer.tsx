@@ -10,14 +10,16 @@ import { Slider } from "./ui/slider";
 import { storage } from "../utils/storage";
 import { toast } from "sonner";
 import { Minus, Plus } from "lucide-react";
+import { useEffect } from "react";
 
 interface DrinkCustomizerProps {
   drink: Drink;
   open: boolean;
   onClose: () => void;
+  existingItem?: CartItem;
 }
 
-export function DrinkCustomizer({ drink, open, onClose }: DrinkCustomizerProps) {
+export function DrinkCustomizer({ drink, open, onClose, existingItem }: DrinkCustomizerProps) {
   const [quantity, setQuantity] = useState(1);
   const [customization, setCustomization] = useState<DrinkCustomization>({
     size: "medium",
@@ -25,6 +27,21 @@ export function DrinkCustomizer({ drink, open, onClose }: DrinkCustomizerProps) 
     iceLevel: 100,
     toppings: [],
   });
+
+  useEffect(() => {
+    if (existingItem) {
+      setQuantity(existingItem.quantity);
+      setCustomization(existingItem.customization);
+    } else {
+      setQuantity(1);
+      setCustomization({
+        size: "medium",
+        sugarLevel: 100,
+        iceLevel: 100,
+        toppings: [],
+      });
+    }
+  }, [existingItem, open]);
 
   const calculatePrice = () => {
     const sizeMultiplier = sizeMultipliers[customization.size];
@@ -34,18 +51,36 @@ export function DrinkCustomizer({ drink, open, onClose }: DrinkCustomizerProps) 
   };
 
   const handleAddToCart = () => {
-    const cartItem: CartItem = {
-      id: `${drink.id}-${Date.now()}`,
-      drink,
-      customization,
-      quantity,
-      totalPrice: calculatePrice(),
-    };
+    if (existingItem) {
+      // Update existing item
+      const currentCart = storage.getCart();
+      const updatedCart = currentCart.map((item) =>
+        item.id === existingItem.id
+          ? {
+              ...item,
+              customization,
+              quantity,
+              totalPrice: calculatePrice(),
+            }
+          : item
+      );
+      storage.setCart(updatedCart);
+      toast.success(`Updated ${drink.name}!`);
+    } else {
+      // Add new item
+      const cartItem: CartItem = {
+        id: `${drink.id}-${Date.now()}`,
+        drink,
+        customization,
+        quantity,
+        totalPrice: calculatePrice(),
+      };
 
-    const currentCart = storage.getCart();
-    storage.setCart([...currentCart, cartItem]);
+      const currentCart = storage.getCart();
+      storage.setCart([...currentCart, cartItem]);
+      toast.success(`Added ${quantity}x ${drink.name} to cart!`);
+    }
     
-    toast.success(`Added ${quantity}x ${drink.name} to cart!`);
     onClose();
   };
 
@@ -204,7 +239,7 @@ export function DrinkCustomizer({ drink, open, onClose }: DrinkCustomizerProps) 
               onClick={handleAddToCart}
               className="bg-gradient-to-r from-amber-500 to-orange-600"
             >
-              Add to Cart
+              {existingItem ? "Update Cart" : "Add to Cart"}
             </Button>
           </div>
         </DialogFooter>

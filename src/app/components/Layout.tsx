@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from "react-router";
-import { ShoppingCart, User, LogOut, Gift } from "lucide-react";
+import { ShoppingCart, User, LogOut, Gift, UserCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { storage } from "../utils/storage";
 import { useEffect, useState } from "react";
@@ -75,8 +75,16 @@ export function Layout() {
                 <span className="text-sm font-semibold text-amber-700">{user.points} pts</span>
               </div>
 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/profile")}
+              >
+                <UserCircle className="w-5 h-5" />
+              </Button>
+
               <div className="flex items-center gap-2">
-                <User className="w-5 h-5" />
+                <UserCircle className="w-5 h-5" />
                 <span className="text-sm">{user.name}</span>
               </div>
 

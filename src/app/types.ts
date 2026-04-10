@@ -3,6 +3,15 @@ export interface User {
   email: string;
   name: string;
   points: number;
+  coupons: Coupon[];
+}
+
+export interface Coupon {
+  id: string;
+  name: string;
+  discount: number; // 0.8 for 20% off
+  expiryDate: string;
+  isUsed: boolean;
 }
 
 export interface DrinkTopping {

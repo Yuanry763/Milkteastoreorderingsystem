@@ -6,6 +6,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { storage } from "../utils/storage";
+import { generateCoupons } from "../utils/coupons";
 import { toast } from "sonner";
 
 export function Login() {
@@ -30,6 +31,7 @@ export function Login() {
       email: loginEmail,
       name: loginEmail.split("@")[0],
       points: 0,
+      coupons: generateCoupons(),
     };
 
     storage.setUser(user);
@@ -56,6 +58,7 @@ export function Login() {
       email: registerEmail,
       name: registerName,
       points: 0,
+      coupons: generateCoupons(),
     };
 
     storage.setUser(user);

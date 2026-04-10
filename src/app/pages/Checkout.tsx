@@ -9,7 +9,7 @@ import { Label } from "../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Separator } from "../components/ui/separator";
 import { Switch } from "../components/ui/switch";
-import { CreditCard, Smartphone, Gift } from "lucide-react";
+import { CreditCard, Smartphone, Gift, Nfc } from "lucide-react";
 import { toast } from "sonner";
 
 export function Checkout() {
@@ -18,6 +18,7 @@ export function Checkout() {
   const [processing, setProcessing] = useState(false);
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
   const [usePoints, setUsePoints] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const user = storage.getUser();
 
@@ -31,6 +32,9 @@ export function Checkout() {
       // Fallback to all cart items
       setCheckoutItems(storage.getCart());
     }
+
+    // Check if mobile device
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
   }, []);
 
   if (checkoutItems.length === 0) {
@@ -128,6 +132,18 @@ export function Checkout() {
                         AlipayHK
                       </Label>
                     </div>
+                    <div className={`flex items-center space-x-3 p-4 border rounded-lg ${isMobile ? 'cursor-pointer hover:bg-gray-50' : 'opacity-50 cursor-not-allowed'}`}>
+                      <RadioGroupItem value="octopus" id="octopus" disabled={!isMobile} />
+                      <Nfc className="w-5 h-5 text-purple-600" />
+                      <div className="flex-1">
+                        <Label htmlFor="octopus" className={isMobile ? "cursor-pointer" : "cursor-not-allowed"}>
+                          Octopus Card
+                        </Label>
+                        {!isMobile && (
+                          <p className="text-xs text-gray-500">Mobile only</p>
+                        )}
+                      </div>
+                    </div>
                   </RadioGroup>
                 </CardContent>
               </Card>
@@ -179,6 +195,23 @@ export function Checkout() {
                         </div>
                       </div>
                       <p className="text-sm text-gray-600">Scan QR code with your {paymentMethod === "wechat" ? "WeChat" : "AlipayHK"} app</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {paymentMethod === "octopus" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Octopus Card</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <div className="w-48 h-48 mx-auto bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center mb-4">
+                        <Nfc className="w-24 h-24 text-purple-600 animate-pulse" />
+                      </div>
+                      <p className="text-lg font-semibold mb-2">Ready to tap</p>
+                      <p className="text-sm text-gray-600">Hold your Octopus card near your device</p>
                     </div>
                   </CardContent>
                 </Card>

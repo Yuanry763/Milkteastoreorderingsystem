@@ -6,13 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { Separator } from "../components/ui/separator";
 import { Checkbox } from "../components/ui/checkbox";
-import { Trash2, ShoppingBag, Minus, Plus } from "lucide-react";
+import { Trash2, ShoppingBag, Minus, Plus, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { DrinkCustomizer } from "../components/DrinkCustomizer";
 
 export function Cart() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
 
   useEffect(() => {
     loadCart();
@@ -71,6 +73,15 @@ export function Cart() {
     setSelectedItems(newSelection);
     
     toast.success("Item removed from cart");
+  };
+
+  const handleModifyItem = (item: CartItem) => {
+    setEditingItem(item);
+  };
+
+  const handleCloseModify = () => {
+    setEditingItem(null);
+    loadCart();
   };
 
   const clearCart = () => {
@@ -271,6 +282,15 @@ export function Cart() {
           </div>
         </div>
       </div>
+
+      {editingItem && (
+        <DrinkCustomizer
+          drink={editingItem.drink}
+          open={!!editingItem}
+          onClose={handleCloseModify}
+          existingItem={editingItem}
+        />
+      )}
     </div>
   );
 }
