@@ -4,6 +4,18 @@ export interface User {
   name: string;
   points: number;
   coupons: Coupon[];
+  feedbacks?: Feedback[];
+}
+
+export interface Feedback {
+  id: string;
+  type: "suggestion" | "complaint";
+  title: string;
+  content: string;
+  createdAt: string;
+  status: "pending" | "replied";
+  reply?: string;
+  repliedAt?: string;
 }
 
 export interface Coupon {

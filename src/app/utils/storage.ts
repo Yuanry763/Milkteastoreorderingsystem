@@ -1,4 +1,4 @@
-import { User, CartItem, Order } from "../types";
+import { User, CartItem, Order, Feedback } from "../types";
 
 export const storage = {
   // User management
@@ -61,5 +61,35 @@ export const storage = {
   getOrder: (orderId: string): Order | null => {
     const orders = storage.getOrders();
     return orders.find((o) => o.id === orderId) || null;
+  },
+
+  // Feedback management
+  addFeedback: (feedback: Feedback) => {
+    const user = storage.getUser();
+    if (user) {
+      if (!user.feedbacks) {
+        user.feedbacks = [];
+      }
+      user.feedbacks.push(feedback);
+      storage.setUser(user);
+    }
+  },
+
+  getFeedbacks: (): Feedback[] => {
+    const user = storage.getUser();
+    return user?.feedbacks || [];
+  },
+
+  updateFeedback: (feedbackId: string, reply: string) => {
+    const user = storage.getUser();
+    if (user && user.feedbacks) {
+      const feedback = user.feedbacks.find(f => f.id === feedbackId);
+      if (feedback) {
+        feedback.status = "replied";
+        feedback.reply = reply;
+        feedback.repliedAt = new Date().toISOString();
+        storage.setUser(user);
+      }
+    }
   },
 };

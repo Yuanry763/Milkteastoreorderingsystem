@@ -9,7 +9,7 @@ import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
-import { UserCircle, Gift, Ticket, LogOut, Edit, Calendar } from "lucide-react";
+import { UserCircle, Gift, Ticket, LogOut, Edit, Calendar, MessageSquare, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { DrinkCustomizer } from "../components/DrinkCustomizer";
@@ -308,6 +308,66 @@ export function Profile() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Feedback History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-purple-600" />
+                My Feedback
+              </CardTitle>
+              <CardDescription>View your feedback and manager's replies</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!user.feedbacks || user.feedbacks.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No feedback submitted yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {user.feedbacks.map((feedback) => (
+                    <div key={feedback.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className={feedback.type === "suggestion" ? "bg-blue-600" : "bg-red-600"}>
+                              {feedback.type === "suggestion" ? "Suggestion" : "Complaint"}
+                            </Badge>
+                            {feedback.status === "replied" && (
+                              <Badge variant="outline" className="border-green-600 text-green-600">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Replied
+                              </Badge>
+                            )}
+                            {feedback.status === "pending" && (
+                              <Badge variant="outline">Pending</Badge>
+                            )}
+                          </div>
+                          <h4 className="font-semibold text-lg">{feedback.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{feedback.content}</p>
+                        </div>
+                      </div>
+                      
+                      {feedback.reply && (
+                        <>
+                          <Separator />
+                          <div className="bg-green-50 p-3 rounded border border-green-200">
+                            <p className="text-sm font-semibold text-green-900 mb-1">Manager's Reply:</p>
+                            <p className="text-sm text-green-800">{feedback.reply}</p>
+                            <p className="text-xs text-green-600 mt-2">
+                              {feedback.repliedAt && `Replied on ${formatDate(feedback.repliedAt)}`}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                      
+                      <p className="text-xs text-gray-500">
+                        Submitted on {formatDate(feedback.createdAt)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>

@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { storage } from "../utils/storage";
 import { generateCoupons } from "../utils/coupons";
 import { toast } from "sonner";
@@ -16,6 +17,14 @@ export function Login() {
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
+  
+  // Forgot password states
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotStep, setForgotStep] = useState<"email" | "verify" | "reset">("email");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +41,7 @@ export function Login() {
       name: loginEmail.split("@")[0],
       points: 0,
       coupons: generateCoupons(),
+      feedbacks: [],
     };
 
     storage.setUser(user);
@@ -59,11 +69,77 @@ export function Login() {
       name: registerName,
       points: 0,
       coupons: generateCoupons(),
+      feedbacks: [],
     };
 
     storage.setUser(user);
     toast.success("Registration successful!");
     navigate("/menu");
+  };
+
+  const handleForgotPasswordEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotEmail) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    // Generate mock verification code
+    const code = Math.random().toString().slice(2, 8);
+    sessionStorage.setItem("verificationCode", code);
+    sessionStorage.setItem("resetEmail", forgotEmail);
+    
+    toast.success(`Verification code sent to ${forgotEmail}!`);
+    setForgotStep("verify");
+  };
+
+  const handleVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!verificationCode) {
+      toast.error("Please enter the verification code");
+      return;
+    }
+
+    const savedCode = sessionStorage.getItem("verificationCode");
+    if (verificationCode !== savedCode) {
+      toast.error("Invalid verification code");
+      return;
+    }
+
+    setForgotStep("reset");
+    toast.success("Verification successful!");
+  };
+
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPassword || !confirmNewPassword) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    // Mock password reset
+    toast.success("Password reset successful!");
+    setShowForgotPassword(false);
+    setForgotStep("email");
+    setForgotEmail("");
+    setVerificationCode("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    sessionStorage.removeItem("verificationCode");
+    sessionStorage.removeItem("resetEmail");
   };
 
   return (
@@ -116,6 +192,14 @@ export function Login() {
                   <Button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-600">
                     Login
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="w-full text-orange-600 hover:text-orange-700"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot Password?
+                  </Button>
                 </form>
               </TabsContent>
 
@@ -160,6 +244,135 @@ export function Login() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            {forgotStep === "email" && (
+              <DialogDescription>Enter your email to receive a verification code</DialogDescription>
+            )}
+            {forgotStep === "verify" && (
+              <DialogDescription>Enter the verification code sent to your email</DialogDescription>
+            )}
+            {forgotStep === "reset" && (
+              <DialogDescription>Create your new password</DialogDescription>
+            )}
+          </DialogHeader>
+
+          {/* Email Step */}
+          {forgotStep === "email" && (
+            <form onSubmit={handleForgotPasswordEmail} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email Address</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setForgotStep("email");
+                    setForgotEmail("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-gradient-to-r from-amber-500 to-orange-600">
+                  Send Code
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+
+          {/* Verification Code Step */}
+          {forgotStep === "verify" && (
+            <form onSubmit={handleVerifyCode} className="space-y-4">
+              <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                <p className="text-sm text-blue-700">
+                  Check your email for the 6-digit verification code
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="verification-code">Verification Code</Label>
+                <Input
+                  id="verification-code"
+                  type="text"
+                  placeholder="000000"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  maxLength={6}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setForgotStep("email");
+                    setVerificationCode("");
+                  }}
+                >
+                  Back
+                </Button>
+                <Button type="submit" className="bg-gradient-to-r from-amber-500 to-orange-600">
+                  Verify
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+
+          {/* Reset Password Step */}
+          {forgotStep === "reset" && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setForgotStep("verify");
+                    setNewPassword("");
+                    setConfirmNewPassword("");
+                  }}
+                >
+                  Back
+                </Button>
+                <Button type="submit" className="bg-gradient-to-r from-amber-500 to-orange-600">
+                  Reset Password
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
