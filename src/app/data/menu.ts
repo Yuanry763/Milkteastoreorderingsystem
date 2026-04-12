@@ -1,4 +1,4 @@
-import { Drink, DrinkTopping } from "../types";
+import { Drink, DrinkTopping, Snack } from "../types";
 
 export const drinks: Drink[] = [
   {
@@ -84,3 +84,14 @@ export const sizeMultipliers = {
   medium: 1.2,
   large: 1.4,
 };
+
+export const snacks: Snack[] = [
+  {
+    id: "s2",
+    name: "Croissant",
+    description: "Buttery French croissant with flaky layers",
+    price: 22,
+    category: "Pastry",
+    image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcm9pc3NhbnQlMjBidXR0ZXJ5fGVufDB8fHx8MTc3NTQ0MzAwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+];

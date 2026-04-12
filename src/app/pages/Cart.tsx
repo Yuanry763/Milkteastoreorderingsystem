@@ -178,24 +178,31 @@ export function Cart() {
                     </div>
                     
                     <img
-                      src={item.drink.image}
-                      alt={item.drink.name}
+                      src={item.drink?.image || item.snack?.image}
+                      alt={item.drink?.name || item.snack?.name}
                       className="w-24 h-24 object-cover rounded-lg"
                     />
                     
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-semibold">{item.drink.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {item.customization.size.charAt(0).toUpperCase() + item.customization.size.slice(1)} • 
-                            {item.customization.sugarLevel}% Sugar • 
-                            {item.customization.iceLevel}% Ice
-                          </p>
-                          {item.customization.toppings.length > 0 && (
-                            <p className="text-sm text-gray-600">
-                              + {item.customization.toppings.map((t) => t.name).join(", ")}
-                            </p>
+                          <h3 className="font-semibold">{item.drink?.name || item.snack?.name}</h3>
+                          {item.drink && item.customization && (
+                            <>
+                              <p className="text-sm text-gray-600">
+                                {item.customization.size.charAt(0).toUpperCase() + item.customization.size.slice(1)} • 
+                                {item.customization.sugarLevel}% Sugar • 
+                                {item.customization.iceLevel}% Ice
+                              </p>
+                              {item.customization.toppings?.length > 0 && (
+                                <p className="text-sm text-gray-600">
+                                  + {item.customization.toppings.map((t) => t.name).join(", ")}
+                                </p>
+                              )}
+                            </>
+                          )}
+                          {item.snack && (
+                            <p className="text-sm text-gray-600">{item.snack.category}</p>
                           )}
                         </div>
                         <Button
@@ -209,16 +216,20 @@ export function Cart() {
 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3"
-                            onClick={() => handleModifyItem(item)}
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Modify
-                          </Button>
-                          <Separator orientation="vertical" className="h-6" />
+                          {item.drink && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3"
+                                onClick={() => handleModifyItem(item)}
+                              >
+                                <Edit className="w-4 h-4 mr-1" />
+                                Modify
+                              </Button>
+                              <Separator orientation="vertical" className="h-6" />
+                            </>
+                          )}
                           <Button
                             variant="outline"
                             size="icon"
@@ -293,7 +304,7 @@ export function Cart() {
         </div>
       </div>
 
-      {editingItem && (
+      {editingItem && editingItem.drink && (
         <DrinkCustomizer
           drink={editingItem.drink}
           open={!!editingItem}

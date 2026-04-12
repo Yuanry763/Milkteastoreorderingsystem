@@ -302,7 +302,7 @@ export function Checkout() {
                     {checkoutItems.map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span className="text-gray-600">
-                          {item.quantity}x {item.drink.name}
+                          {item.quantity}x {item.drink?.name || item.snack?.name}
                         </span>
                         <span>HK${item.totalPrice.toFixed(2)}</span>
                       </div>

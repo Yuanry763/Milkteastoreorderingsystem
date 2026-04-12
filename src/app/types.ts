@@ -50,10 +50,21 @@ export interface Drink {
   isRecommended?: boolean;
 }
 
+export interface Snack {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
+  isRecommended?: boolean;
+}
+
 export interface CartItem {
   id: string;
-  drink: Drink;
-  customization: DrinkCustomization;
+  drink?: Drink;
+  snack?: Snack;
+  customization?: DrinkCustomization;
   quantity: number;
   totalPrice: number;
 }
