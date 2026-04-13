@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { storage } from "../utils/storage";
+import { storage, isValidCartItem } from "../utils/storage";
 import { Order, CartItem } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -27,11 +27,21 @@ export function Checkout() {
     // Get items to checkout from session storage
     const itemsJson = sessionStorage.getItem('checkoutItems');
     if (itemsJson) {
-      const items = JSON.parse(itemsJson);
-      setCheckoutItems(items);
+      try {
+        const items = JSON.parse(itemsJson);
+        // Filter to only valid items
+        const validItems = items.filter(isValidCartItem);
+        setCheckoutItems(validItems);
+      } catch (error) {
+        console.error("Error parsing checkout items:", error);
+        // Fallback to all cart items
+        const cartItems = storage.getCart();
+        setCheckoutItems(cartItems);
+      }
     } else {
       // Fallback to all cart items
-      setCheckoutItems(storage.getCart());
+      const cartItems = storage.getCart();
+      setCheckoutItems(cartItems);
     }
 
     // Check if mobile device
@@ -66,53 +76,76 @@ export function Checkout() {
       return;
     }
 
+    // Validate all checkout items before processing payment
+    const validItems = checkoutItems.filter(isValidCartItem);
+    if (validItems.length === 0) {
+      toast.error("Cart contains invalid items. Please update your cart.");
+      navigate("/cart");
+      return;
+    }
+
+    if (validItems.length !== checkoutItems.length) {
+      toast.warning("Some invalid items were removed from your order.");
+    }
+
     setProcessing(true);
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Simulate payment processing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    const allOrders = storage.getOrders();
-    const queueNumber = allOrders.length + 1;
+      const allOrders = storage.getOrders();
+      const queueNumber = allOrders.length + 1;
 
-    const order: Order = {
-      id: Math.random().toString(36).substring(7),
-      userId: user.id,
-      items: checkoutItems,
-      totalAmount: total,
-      status: "pending",
-      queueNumber,
-      createdAt: new Date().toISOString(),
-      estimatedTime: 10 + Math.floor(Math.random() * 10), // 10-20 minutes
-    };
+      const order: Order = {
+        id: Math.random().toString(36).substring(7),
+        userId: user.id,
+        items: validItems, // Use validated items
+        totalAmount: total,
+        status: "pending",
+        queueNumber,
+        createdAt: new Date().toISOString(),
+        estimatedTime: 10 + Math.floor(Math.random() * 10), // 10-20 minutes
+      };
 
-    storage.addOrder(order);
-    
-    // Mark coupon as used if applicable
-    if (useCoupon && selectedCouponId && user) {
-      const updatedCoupons = user.coupons.map(c => 
-        c.id === selectedCouponId ? { ...c, isUsed: true } : c
-      );
-      const updatedUser = { ...user, coupons: updatedCoupons };
-      storage.setUser(updatedUser);
+      storage.addOrder(order);
+      
+      // Mark coupon as used if applicable
+      if (useCoupon && selectedCouponId && user) {
+        const updatedCoupons = user.coupons.map(c => 
+          c.id === selectedCouponId ? { ...c, isUsed: true } : c
+        );
+        const updatedUser = { ...user, coupons: updatedCoupons };
+        storage.setUser(updatedUser);
+      }
+      
+      // Update user points - add earned points (based on final amount after discount)
+      if (user) {
+        const newPoints = user.points + Math.floor(total);
+        storage.updateUserPoints(newPoints);
+      }
+      
+      // Remove checked out items from cart
+      const allCartItems = storage.getCart();
+      const checkoutItemIds = new Set(validItems.map(item => item.id));
+      const remainingItems = allCartItems.filter(item => !checkoutItemIds.has(item.id));
+      storage.setCart(remainingItems);
+      
+      // Clear checkout session
+      sessionStorage.removeItem('checkoutItems');
+
+      toast.success("Order placed successfully!");
+      setProcessing(false);
+      
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        navigate(`/order/${order.id}`);
+      }, 100);
+    } catch (error) {
+      console.error("Error placing order:", error);
+      setProcessing(false);
+      toast.error("Failed to place order. Please try again.");
     }
-    
-    // Update user points - add earned points (based on final amount after discount)
-    if (user) {
-      const newPoints = user.points + Math.floor(total);
-      storage.updateUserPoints(newPoints);
-    }
-    
-    // Remove checked out items from cart
-    const allCartItems = storage.getCart();
-    const checkoutItemIds = new Set(checkoutItems.map(item => item.id));
-    const remainingItems = allCartItems.filter(item => !checkoutItemIds.has(item.id));
-    storage.setCart(remainingItems);
-    
-    // Clear checkout session
-    sessionStorage.removeItem('checkoutItems');
-
-    toast.success("Order placed successfully!");
-    navigate(`/order/${order.id}`);
   };
 
   return (
@@ -126,56 +159,63 @@ export function Checkout() {
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               {/* Coupon Selection */}
-              {getActiveCoupons().length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Ticket className="w-5 h-5 text-orange-600" />
-                      Apply Coupon
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">You can use one coupon per order</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50"
-                        onClick={() => {
-                          setUseCoupon(!useCoupon);
-                          if (useCoupon) setSelectedCouponId(null);
-                        }}>
-                        <input 
-                          type="checkbox" 
-                          id="use-coupon"
-                          checked={useCoupon}
-                          onChange={() => {}}
-                          className="cursor-pointer"
-                        />
-                        <label htmlFor="use-coupon" className="flex-1 cursor-pointer text-sm font-medium">
-                          Use a coupon
-                        </label>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Ticket className="w-5 h-5 text-orange-600" />
+                    Apply Coupon
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {getActiveCoupons().length > 0 ? (
+                    <>
+                      <p className="text-sm text-gray-600">You can use one coupon per order</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50"
+                          onClick={() => {
+                            setUseCoupon(!useCoupon);
+                            if (useCoupon) setSelectedCouponId(null);
+                          }}>
+                          <input 
+                            type="checkbox" 
+                            id="use-coupon"
+                            checked={useCoupon}
+                            onChange={() => {}}
+                            className="cursor-pointer"
+                          />
+                          <label htmlFor="use-coupon" className="flex-1 cursor-pointer text-sm font-medium">
+                            Use a coupon
+                          </label>
+                        </div>
                       </div>
+                      
+                      {useCoupon && (
+                        <div className="space-y-2 pl-6">
+                          <p className="text-xs text-gray-500">Select one coupon:</p>
+                          <RadioGroup value={selectedCouponId || ""} onValueChange={setSelectedCouponId}>
+                            {getActiveCoupons().map((coupon) => (
+                              <div key={coupon.id} className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-orange-50 cursor-pointer hover:border-orange-400">
+                                <RadioGroupItem value={coupon.id} id={coupon.id} />
+                                <Label htmlFor={coupon.id} className="flex-1 cursor-pointer">
+                                  <div>
+                                    <p className="font-semibold text-orange-900">{coupon.name}</p>
+                                    <p className="text-xs text-orange-600">Get 20% off</p>
+                                  </div>
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="p-4 rounded-lg bg-gray-50 text-center">
+                      <p className="text-sm text-gray-600 mb-2">No available coupons at the moment</p>
+                      <p className="text-xs text-gray-500">Check back later for exclusive deals!</p>
                     </div>
-                    
-                    {useCoupon && (
-                      <div className="space-y-2 pl-6">
-                        <p className="text-xs text-gray-500">Select one coupon:</p>
-                        <RadioGroup value={selectedCouponId || ""} onValueChange={setSelectedCouponId}>
-                          {getActiveCoupons().map((coupon) => (
-                            <div key={coupon.id} className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-orange-50 cursor-pointer hover:border-orange-400">
-                              <RadioGroupItem value={coupon.id} id={coupon.id} />
-                              <Label htmlFor={coupon.id} className="flex-1 cursor-pointer">
-                                <div>
-                                  <p className="font-semibold text-orange-900">{coupon.name}</p>
-                                  <p className="text-xs text-orange-600">Get 20% off</p>
-                                </div>
-                              </Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Payment Method */}
               <Card>
@@ -332,7 +372,7 @@ export function Checkout() {
                         HK${total.toFixed(2)}
                       </span>
                     </div>
-                    {total > 0 && (
+                    {subtotal > 0 && (
                       <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 p-2 rounded">
                         <Gift className="w-3 h-3" />
                         <span>You'll earn {Math.floor(total)} points from this order!</span>

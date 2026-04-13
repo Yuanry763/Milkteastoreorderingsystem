@@ -47,10 +47,14 @@ export function DrinkCustomizer({ drink, open, onClose, existingItem }: DrinkCus
     const sizeMultiplier = sizeMultipliers[customization.size];
     const basePrice = drink.basePrice * sizeMultiplier;
     const toppingsPrice = customization.toppings.reduce((sum, t) => sum + t.price, 0);
-    return (basePrice + toppingsPrice) * quantity;
+    const totalPrice = (basePrice + toppingsPrice) * quantity;
+    // Round to 2 decimal places to avoid floating point precision issues
+    return Math.round(totalPrice * 100) / 100;
   };
 
   const handleAddToCart = () => {
+    const finalPrice = calculatePrice();
+    
     if (existingItem) {
       // Update existing item
       const currentCart = storage.getCart();
@@ -60,7 +64,7 @@ export function DrinkCustomizer({ drink, open, onClose, existingItem }: DrinkCus
               ...item,
               customization,
               quantity,
-              totalPrice: calculatePrice(),
+              totalPrice: finalPrice,
             }
           : item
       );
@@ -73,7 +77,7 @@ export function DrinkCustomizer({ drink, open, onClose, existingItem }: DrinkCus
         drink,
         customization,
         quantity,
-        totalPrice: calculatePrice(),
+        totalPrice: finalPrice,
       };
 
       const currentCart = storage.getCart();

@@ -46,19 +46,24 @@ export function Menu() {
 
   const handleAddSnack = (snack: Snack) => {
     const cart = storage.getCart();
-    const existingItem = cart.find((item) => item.snack?.id === snack.id);
+    // Find existing snack by product ID and item type (snack without customization)
+    const existingItem = cart.find((item) => 
+      item.snack?.id === snack.id && !item.drink && !item.customization
+    );
     
     if (existingItem && existingItem.snack) {
+      // Update quantity and price
       existingItem.quantity += 1;
-      existingItem.totalPrice = existingItem.snack.price * existingItem.quantity;
+      existingItem.totalPrice = Math.round(existingItem.snack.price * existingItem.quantity * 100) / 100;
     } else {
+      // Create new snack item - ensure all required fields are set
       const newItem = {
         id: `snack-${snack.id}-${Date.now()}`,
         snack: snack,
         quantity: 1,
-        totalPrice: snack.price,
-      };
-      cart.push(newItem);
+        totalPrice: Math.round(snack.price * 100) / 100, // Ensure proper decimal format
+      } as Partial<typeof CartItem>;
+      cart.push(newItem as any);
     }
     
     storage.setCart(cart);

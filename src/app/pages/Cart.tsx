@@ -48,15 +48,33 @@ export function Cart() {
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     
-    const updatedCart = cartItems.map((item) =>
-      item.id === itemId
-        ? {
-            ...item,
-            quantity: newQuantity,
-            totalPrice: (item.totalPrice / item.quantity) * newQuantity,
-          }
-        : item
-    );
+    const updatedCart = cartItems.map((item) => {
+      if (item.id === itemId) {
+        // Calculate unit price properly based on item type
+        let unitPrice: number;
+        if (item.drink && item.customization) {
+          // For drinks, recalculate based on original price with all toppings
+          const basePrice = item.drink.basePrice;
+          const sizeMultiplier = item.customization.size === "small" ? 1 : 
+                                 item.customization.size === "medium" ? 1.2 : 1.4;
+          const toppingPrice = item.customization.toppings.reduce((sum, t) => sum + t.price, 0);
+          unitPrice = basePrice * sizeMultiplier + toppingPrice;
+        } else if (item.snack) {
+          // For snacks, use the item's price directly
+          unitPrice = item.snack.price;
+        } else {
+          // Fallback: divide original totalPrice by original quantity
+          unitPrice = item.totalPrice / item.quantity;
+        }
+        
+        return {
+          ...item,
+          quantity: newQuantity,
+          totalPrice: Math.round(unitPrice * newQuantity * 100) / 100, // Round to 2 decimals
+        };
+      }
+      return item;
+    });
     
     storage.setCart(updatedCart);
     setCartItems(updatedCart);

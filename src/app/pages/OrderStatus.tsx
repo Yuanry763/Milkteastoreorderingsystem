@@ -194,18 +194,27 @@ export function OrderStatus() {
                   <div key={item.id} className="flex justify-between items-start text-sm">
                     <div className="flex-1">
                       <div className="font-medium">
-                        {item.quantity}x {item.drink.name}
+                        {item.quantity}x {item.drink?.name || item.snack?.name}
                       </div>
-                      <div className="text-xs text-gray-600">
-                        {item.customization.size} • {item.customization.sugarLevel}% Sugar • {item.customization.iceLevel}% Ice
-                      </div>
-                      {item.customization.toppings.length > 0 && (
+                      {item.drink && item.customization && (
+                        <>
+                          <div className="text-xs text-gray-600">
+                            {item.customization.size.charAt(0).toUpperCase() + item.customization.size.slice(1)} • {item.customization.sugarLevel}% Sugar • {item.customization.iceLevel}% Ice
+                          </div>
+                          {item.customization.toppings && item.customization.toppings.length > 0 && (
+                            <div className="text-xs text-gray-600">
+                              + {item.customization.toppings.map((t) => t.name).join(", ")}
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {item.snack && (
                         <div className="text-xs text-gray-600">
-                          + {item.customization.toppings.map((t) => t.name).join(", ")}
+                          {item.snack.category}
                         </div>
                       )}
                     </div>
-                    <div className="font-medium">${item.totalPrice.toFixed(2)}</div>
+                    <div className="font-medium">HK${item.totalPrice.toFixed(2)}</div>
                   </div>
                 ))}
               </div>

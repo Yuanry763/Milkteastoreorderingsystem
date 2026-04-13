@@ -1,5 +1,10 @@
 import { User, CartItem, Order, Feedback } from "../types";
 
+// Validate if a CartItem is valid (must have either drink or snack)
+export const isValidCartItem = (item: CartItem): boolean => {
+  return (!!item.drink || !!item.snack) && item.quantity > 0 && item.totalPrice > 0;
+};
+
 export const storage = {
   // User management
   getUser: (): User | null => {
@@ -26,7 +31,9 @@ export const storage = {
   // Cart management
   getCart: (): CartItem[] => {
     const cart = localStorage.getItem("cart");
-    return cart ? JSON.parse(cart) : [];
+    const items = cart ? JSON.parse(cart) : [];
+    // Filter out invalid items to prevent data corruption
+    return items.filter(isValidCartItem);
   },
 
   setCart: (cart: CartItem[]) => {
